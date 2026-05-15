@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FotoPDF — Impaginatore</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8a020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FotoPDF">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0f0f0d;
+  --bg2: #1a1a17;
+  --bg3: #252520;
+  --border: #2e2e28;
+  --accent: #e8a020;
+  --accent2: #c07810;
+  --ink: #f0ece0;
+  --ink2: #b8b4a8;
+  --ink3: #6a6660;
+  --green: #2a9d5c;
+  --red: #c0392b;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -.5px;
+}
+.logo span { color: var(--ink2); font-weight: 400; }
+.header-spacer { flex: 1; }
+.btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { background: #2e2e28; color: var(--ink); border-color: #444; }
+.btn.primary { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn.danger { border-color: #4a1a18; color: #c06060; }
+.btn.danger:hover { background: #2a0e0d; color: var(--red); border-color: var(--red); }
+.btn:disabled { opacity: .4; cursor: default; }
+
+/* ===== LAYOUT ===== */
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 57px);
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 57px);
+  position: sticky;
+  top: 57px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 10px; }
+
+label { font-size: 12px; color: var(--ink3); display: block; margin-bottom: 4px; }
+
+input[type="text"], input[type="date"], textarea, select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border .15s;
+}
+input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+input[type="text"]::placeholder, textarea::placeholder { color: var(--ink3); }
+textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+
+/* Color scheme per PDF */
+select option { background: var(--bg3); }
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ===== PROJECTS ===== */
+.projects-list { display: flex; flex-direction: column; gap: 6px; }
+.proj-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.proj-item:hover { border-color: #444; }
+.proj-item.active { border-color: var(--accent); background: #1e1a0e; }
+.proj-item-name { flex: 1; font-size: 13px; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-item-count { font-size: 11px; color: var(--ink3); }
+.proj-del { font-size: 14px; color: var(--ink3); cursor: pointer; opacity: 0; transition: opacity .15s; }
+.proj-item:hover .proj-del { opacity: 1; }
+.proj-del:hover { color: var(--red); }
+
+/* ===== MAIN ===== */
+.main {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== DROP ZONE ===== */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--bg2);
+  position: relative;
+}
+.dropzone:hover, .dropzone.drag { border-color: var(--accent); background: #1a1708; }
+.dropzone-icon { font-size: 36px; margin-bottom: 10px; }
+.dropzone-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.dropzone-sub { font-size: 13px; color: var(--ink3); }
+#file-input { display: none; }
+
+/* ===== GRID FOTO ===== */
+.foto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.foto-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  transition: border-color .15s, transform .15s;
+  user-select: none;
+}
+.foto-card:hover { border-color: #444; }
+.foto-card.dragging { opacity: .5; transform: scale(.97); }
+.foto-card.drag-over { border-color: var(--accent); border-style: dashed; }
+
+.foto-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+}
+
+.foto-footer {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.foto-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.foto-note-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--ink2);
+  outline: none;
+  min-width: 0;
+  transition: border-color .15s;
+}
+.foto-note-input:focus { border-color: var(--accent); color: var(--ink); }
+.foto-note-input::placeholder { color: var(--ink3); font-size: 11px; }
+
+.foto-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink3);
+  font-size: 16px;
+  padding: 0 2px;
+  transition: color .15s;
+  line-height: 1;
+}
+.foto-del:hover { color: var(--red); }
+.foto-rot {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink3);
+  font-size: 15px;
+  padding: 0 2px;
+  transition: color .15s;
+  line-height: 1;
+}
+.foto-rot:hover { color: var(--accent); }
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.toolbar-info { font-size: 13px; color: var(--ink2); flex: 1; }
+.toolbar-info strong { color: var(--ink); }
+
+/* Layout picker */
+.layout-picker { display: flex; gap: 6px; align-items: center; }
+.layout-picker label { font-size: 12px; color: var(--ink3); margin: 0; }
+.lpbtn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.lpbtn.on { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 600; }
+.lpbtn:hover:not(.on) { border-color: #444; color: var(--ink); }
+
+/* ===== EMPTY STATE ===== */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink3);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+.empty-title { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--ink2); margin-bottom: 8px; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  color: var(--ink);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all .3s;
+  pointer-events: none;
+  max-width: 300px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { border-color: var(--green); }
+.toast.error { border-color: var(--red); }
+
+/* ===== NO PROJECT ===== */
+.no-project {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  text-align: center;
+}
+.no-project-icon { font-size: 56px; opacity: .3; }
+.no-project-title { font-family: 'Syne', sans-serif; font-size: 22px; color: var(--ink2); }
+.no-project-sub { font-size: 14px; color: var(--ink3); max-width: 320px; }
+
+/* ===== MODAL NUOVO PROGETTO ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 32px;
+  width: 90%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+@media (max-width: 700px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; max-height: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL NUOVO PROGETTO -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal">
+    <div class="modal-title">&#128194; Nuovo Progetto</div>
+    <div>
+      <label>Nome progetto</label>
+      <input type="text" id="new-proj-name" placeholder="es. Sopralluogo Via Roma 12..." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-cancel">Annulla</button>
+      <button class="btn primary" id="modal-confirm">Crea progetto</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">Foto<span>PDF</span></div>
+  <div class="header-spacer"></div>
+  <button class="btn" id="btn-new-proj">&#43; Nuovo progetto</button>
+  <button class="btn primary" id="btn-pdf" disabled>&#11015; Scarica PDF</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- PROGETTI -->
+    <div>
+      <div class="section-title">Progetti</div>
+      <div class="projects-list" id="projects-list">
+        <div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px 0;">Nessun progetto ancora.<br>Clicca <b>+ Nuovo progetto</b>.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DATI DOCUMENTO -->
+    <div id="meta-panel" style="display:none;">
+      <div class="section-title">Dati documento</div>
+      <div class="field-group">
+        <div>
+          <label>Titolo / Oggetto</label>
+          <input type="text" id="meta-titolo" placeholder="es. Relazione sopralluogo..." />
+        </div>
+        <div>
+          <label>Luogo</label>
+          <input type="text" id="meta-luogo" placeholder="es. Via Roma 12, Ancona" />
+        </div>
+        <div>
+          <label>Data</label>
+          <input type="date" id="meta-data" />
+        </div>
+        <div>
+          <label>Nome / Committente</label>
+          <input type="text" id="meta-nome" placeholder="es. Mario Rossi" />
+        </div>
+        <div>
+          <label>Note generali</label>
+          <textarea id="meta-note" placeholder="Descrizione, osservazioni generali..."></textarea>
+        </div>
+        <div>
+          <label>Layout PDF</label>
+          <select id="meta-layout">
+            <option value="1">1 foto per pagina (grande)</option>
+            <option value="2" selected>2 foto per pagina</option>
+            <option value="4">4 foto per pagina (2×2)</option>
+            <option value="6">6 foto per pagina (2×3)</option>
+          </select>
+        </div>
+        <div>
+          <label>Orientamento PDF</label>
+          <select id="meta-orient">
+            <option value="p" selected>Verticale (A4)</option>
+            <option value="l">Orizzontale (A4)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main-area">
+
+    <div class="no-project" id="no-project-msg">
+      <div class="no-project-icon">&#128247;</div>
+      <div class="no-project-title">Nessun progetto aperto</div>
+      <div class="no-project-sub">Clicca <b>+ Nuovo progetto</b> in alto per iniziare a lavorare</div>
+      <button class="btn primary" onclick="openModalNew()" style="margin-top:8px;">&#43; Crea il primo progetto</button>
+    </div>
+
+    <div id="project-content" style="display:none; display:flex; flex-direction:column; gap:20px;">
+
+      <!-- TOOLBAR -->
+      <div class="toolbar" id="toolbar">
+        <div class="toolbar-info">
+          Progetto: <strong id="proj-name-label">—</strong> &nbsp;·&nbsp;
+          <span id="foto-count">0 foto</span>
+        </div>
+        <button class="btn danger" id="btn-clear-foto" style="font-size:12px;">&#128465; Svuota</button>
+        <button class="btn" id="btn-add-more" style="font-size:12px;">&#43; Aggiungi foto</button>
+      </div>
+
+      <!-- DROP ZONE -->
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">&#128247;</div>
+        <div class="dropzone-title">Trascina le foto qui</div>
+        <div class="dropzone-sub">oppure clicca per selezionarle &mdash; JPG, PNG, HEIC</div>
+        <input type="file" id="file-input" multiple accept="image/*" />
+      </div>
+
+      <!-- GRIGLIA FOTO -->
+      <div id="foto-area" style="display:none;">
+        <div class="section-title" style="margin-bottom:12px;">Foto aggiunte &mdash; trascina per riordinare · scrivi nota su ogni foto</div>
+        <div class="foto-grid" id="foto-grid"></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ===== STATE =====
+var projects = [];     // [{id, name, meta:{titolo,luogo,data,nome,note,layout,orient}, fotos:[{id,dataUrl,note}]}]
+var activeId = null;
+
+var dragSrc = null;
+
+// ===== STORAGE =====
+function save() {
+  try {
+    // Salva tutto tranne i dataUrl (troppo grandi) — salviamo comunque tutto per ora
+    localStorage.setItem('fotopdf_projects', JSON.stringify(projects.map(function(p) {
+      return { id: p.id, name: p.name, meta: p.meta, fotos: p.fotos };
+    })));
+  } catch(e) { showToast('Storage pieno: troppo foto salvate. Usa PDF e poi svuota.', 'error'); }
+}
+function load() {
+  try {
+    var raw = localStorage.getItem('fotopdf_projects');
+    if (raw) projects = JSON.parse(raw);
+  } catch(e) { projects = []; }
+}
+
+// ===== TOAST =====
+function showToast(msg, type, dur) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, dur || 2800);
+}
+
+// ===== ACTIVE PROJECT =====
+function getActive() {
+  return projects.find(function(p) { return p.id === activeId; }) || null;
+}
+
+// ===== RENDER SIDEBAR PROJECTS =====
+function renderProjects() {
+  var list = document.getElementById('projects-list');
+  if (!projects.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px 0;">Nessun progetto ancora.<br>Clicca <b>+ Nuovo progetto</b>.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  projects.forEach(function(p) {
+    var div = document.createElement('div');
+    div.className = 'proj-item' + (p.id === activeId ? ' active' : '');
+    div.innerHTML =
+      '<div class="proj-item-name">' + esc(p.name) + '</div>' +
+      '<div class="proj-item-count">' + p.fotos.length + ' 📷</div>' +
+      '<div class="proj-del" title="Elimina progetto" data-id="' + p.id + '">✕</div>';
+    div.querySelector('.proj-item-name').addEventListener('click', function() { activateProject(p.id); });
+    div.querySelector('.proj-item-count').addEventListener('click', function() { activateProject(p.id); });
+    div.querySelector('.proj-del').addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (confirm('Eliminare il progetto "' + p.name + '"?')) {
+        projects = projects.filter(function(x) { return x.id !== p.id; });
+        if (activeId === p.id) { activeId = projects.length ? projects[0].id : null; }
+        save(); renderAll();
+      }
+    });
+    list.appendChild(div);
+  });
+}
+
+// ===== ACTIVATE PROJECT =====
+function activateProject(id) {
+  activeId = id;
+  var p = getActive();
+  if (!p) return;
+  document.getElementById('no-project-msg').style.display = 'none';
+  document.getElementById('project-content').style.display = 'flex';
+  document.getElementById('meta-panel').style.display = 'block';
+  document.getElementById('proj-name-label').textContent = p.name;
+  // Compila meta
+  document.getElementById('meta-titolo').value = p.meta.titolo || '';
+  document.getElementById('meta-luogo').value = p.meta.luogo || '';
+  document.getElementById('meta-data').value = p.meta.data || '';
+  document.getElementById('meta-nome').value = p.meta.nome || '';
+  document.getElementById('meta-note').value = p.meta.note || '';
+  document.getElementById('meta-layout').value = p.meta.layout || '2';
+  document.getElementById('meta-orient').value = p.meta.orient || 'p';
+  renderGrid();
+  renderProjects();
+  updatePDFBtn();
+}
+
+// ===== META CHANGE =====
+['meta-titolo','meta-luogo','meta-data','meta-nome','meta-note','meta-layout','meta-orient'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    var p = getActive(); if (!p) return;
+    var key = id.replace('meta-', '');
+    p.meta[key] = this.value;
+    save();
+  });
+});
+
+// ===== RENDER GRID =====
+function renderGrid() {
+  var p = getActive();
+  var grid = document.getElementById('foto-grid');
+  var area = document.getElementById('foto-area');
+  var dz = document.getElementById('dropzone');
+  var cnt = document.getElementById('foto-count');
+
+  if (!p || !p.fotos.length) {
+    grid.innerHTML = '';
+    area.style.display = 'none';
+    dz.style.display = 'block';
+    cnt.textContent = '0 foto';
+    updatePDFBtn();
+    return;
+  }
+
+  dz.style.display = 'none';
+  area.style.display = 'block';
+  cnt.textContent = p.fotos.length + ' foto';
+  grid.innerHTML = '';
+
+  p.fotos.forEach(function(f, i) {
+    var card = document.createElement('div');
+    card.className = 'foto-card';
+    card.draggable = true;
+    card.dataset.id = f.id;
+
+    // Rotazione immagine
+    var rot = f.rotation || 0;
+    var rotStyle = rot ? 'transform:rotate(' + rot + 'deg);' : '';
+
+    var lettera = indiceLettere(i);
+    card.innerHTML =
+      '<img class="foto-img" src="' + f.dataUrl + '" alt="foto ' + (i+1) + '" style="' + rotStyle + '" />' +
+      '<div class="foto-footer">' +
+        '<span class="foto-num" style="min-width:28px;">' + lettera + '</span>' +
+        '<input class="foto-note-input" type="text" placeholder="nota foto..." value="' + esc(f.note || '') + '" />' +
+        '<button class="foto-rot" title="Ruota 90°">&#10227;</button>' +
+        '<button class="foto-del" title="Rimuovi">&#10005;</button>' +
+      '</div>';
+
+    // Note
+    card.querySelector('.foto-note-input').addEventListener('input', function() {
+      f.note = this.value; save();
+    });
+    // Ruota
+    card.querySelector('.foto-rot').addEventListener('click', function() {
+      f.rotation = ((f.rotation || 0) + 90) % 360;
+      // Applica la rotazione al dataUrl tramite canvas
+      ruotaFoto(f, function() { save(); renderGrid(); });
+    });
+    // Delete
+    card.querySelector('.foto-del').addEventListener('click', function() {
+      p.fotos = p.fotos.filter(function(x) { return x.id !== f.id; });
+      save(); renderGrid(); renderProjects();
+    });
+
+    // Drag & drop riordina
+    card.addEventListener('dragstart', function() {
+      dragSrc = f.id; card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', function() {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.foto-card').forEach(function(c) { c.classList.remove('drag-over'); });
+    });
+    card.addEventListener('dragover', function(e) {
+      e.preventDefault(); card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave', function() { card.classList.remove('drag-over'); });
+    card.addEventListener('drop', function(e) {
+      e.preventDefault(); card.classList.remove('drag-over');
+      if (!dragSrc || dragSrc === f.id) return;
+      var srcIdx = p.fotos.findIndex(function(x) { return x.id === dragSrc; });
+      var dstIdx = p.fotos.findIndex(function(x) { return x.id === f.id; });
+      var spliced = p.fotos.splice(srcIdx, 1)[0];
+      p.fotos.splice(dstIdx, 0, spliced);
+      save(); renderGrid();
+    });
+
+    grid.appendChild(card);
+  });
+
+  updatePDFBtn();
+}
+
+// ===== RUOTA FOTO (canvas) =====
+function ruotaFoto(f, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var gradi = f.rotation || 0;
+    var swap = gradi === 90 || gradi === 270;
+    var w = swap ? img.height : img.width;
+    var h = swap ? img.width : img.height;
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.translate(w/2, h/2);
+    ctx.rotate(gradi * Math.PI / 180);
+    ctx.drawImage(img, -img.width/2, -img.height/2);
+    f.dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    f.rotation = 0; // già incorporata nell'immagine
+    if (cb) cb();
+  };
+  img.src = f.dataUrl;
+}
+
+// ===== COMPRIMI FOTO =====
+function comprimi(dataUrl, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var MAX = 1600; // max lato lungo in px
+    var w = img.width, h = img.height;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    // Qualità 0.75 — buon equilibrio dimensione/qualità
+    cb(canvas.toDataURL('image/jpeg', 0.75));
+  };
+  img.src = dataUrl;
+}
+
+// ===== ADD PHOTOS =====
+function addFiles(files) {
+  var p = getActive(); if (!p) return;
+  var arr = Array.from(files).filter(function(f) { return f.type.startsWith('image/'); });
+  if (!arr.length) { showToast('Nessuna immagine selezionata.', 'error'); return; }
+  var loaded = 0;
+  showToast('⏳ Elaborazione foto...', '', 5000);
+  arr.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      comprimi(e.target.result, function(compressed) {
+        p.fotos.push({ id: Date.now() + Math.random(), dataUrl: compressed, note: '', rotation: 0 });
+        loaded++;
+        if (loaded === arr.length) {
+          save(); renderGrid(); renderProjects();
+          showToast(arr.length + ' foto aggiunte!', 'success');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Dropzone click
+document.getElementById('dropzone').addEventListener('click', function() {
+  document.getElementById('file-input').click();
+});
+document.getElementById('file-input').addEventListener('change', function() {
+  addFiles(this.files); this.value = '';
+});
+// Drag & drop su dropzone
+document.getElementById('dropzone').addEventListener('dragover', function(e) {
+  e.preventDefault(); this.classList.add('drag');
+});
+document.getElementById('dropzone').addEventListener('dragleave', function() { this.classList.remove('drag'); });
+document.getElementById('dropzone').addEventListener('drop', function(e) {
+  e.preventDefault(); this.classList.remove('drag'); addFiles(e.dataTransfer.files);
+});
+
+// Add more button
+document.getElementById('btn-add-more').addEventListener('click', function() {
+  document.getElementById('file-input').click();
+});
+
+// Clear
+document.getElementById('btn-clear-foto').addEventListener('click', function() {
+  var p = getActive(); if (!p) return;
+  if (!confirm('Rimuovere tutte le foto dal progetto?')) return;
+  p.fotos = []; save(); renderGrid(); renderProjects();
+});
+
+// ===== PDF BTN =====
+function updatePDFBtn() {
+  var p = getActive();
+  document.getElementById('btn-pdf').disabled = !p || !p.fotos.length;
+}
+
+// ===== NUOVO PROGETTO =====
+function openModalNew() { document.getElementById('modal-new').classList.add('open'); setTimeout(function(){document.getElementById('new-proj-name').focus();},100); }
+document.getElementById('btn-new-proj').addEventListener('click', openModalNew);
+document.getElementById('modal-cancel').addEventListener('click', function() { document.getElementById('modal-new').classList.remove('open'); });
+document.getElementById('modal-confirm').addEventListener('click', createProject);
+document.getElementById('new-proj-name').addEventListener('keydown', function(e) { if (e.key === 'Enter') createProject(); });
+document.getElementById('modal-new').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+
+function createProject() {
+  var name = document.getElementById('new-proj-name').value.trim();
+  if (!name) { showToast('Inserisci un nome per il progetto.', 'error'); return; }
+  var today = new Date().toISOString().split('T')[0];
+  var proj = {
+    id: Date.now(),
+    name: name,
+    meta: { titolo: name, luogo: '', data: today, nome: '', note: '', layout: '2', orient: 'p' },
+    fotos: []
+  };
+  projects.unshift(proj);
+  activeId = proj.id;
+  document.getElementById('new-proj-name').value = '';
+  document.getElementById('modal-new').classList.remove('open');
+  save(); renderAll();
+  showToast('Progetto "' + name + '" creato!', 'success');
+}
+
+function renderAll() { renderProjects(); if (activeId) activateProject(activeId); else { document.getElementById('no-project-msg').style.display = ''; document.getElementById('project-content').style.display = 'none'; document.getElementById('meta-panel').style.display = 'none'; } }
+
+// ===== GENERA PDF =====
+document.getElementById('btn-pdf').addEventListener('click', makePDF);
+
+function makePDF() {
+  var p = getActive();
+  if (!p || !p.fotos.length) return;
+
+  var orient = p.meta.orient || 'p';
+  var layout = parseInt(p.meta.layout || '2');
+
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: orient === 'l' ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+
+  var PW = orient === 'l' ? 297 : 210;
+  var PH = orient === 'l' ? 210 : 297;
+  var ML = 12, MR = 12, MT = 12, MB = 16;
+  var CW = PW - ML - MR;
+
+  // ===== COPERTINA =====
+  doc.setFillColor(15, 15, 13);
+  doc.rect(0, 0, PW, PH, 'F');
+  // Striscia arancione
+  doc.setFillColor(232, 160, 32);
+  doc.rect(0, 0, 4, PH, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(28);
+  doc.setTextColor(240, 236, 224);
+  var titolo = p.meta.titolo || p.name;
+  var titoloLines = doc.splitTextToSize(titolo, CW - 10);
+  var ty = 55;
+  titoloLines.forEach(function(line) { doc.text(line, ML + 10, ty); ty += 10; });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(180, 160, 100);
+  var riga2 = [];
+  if (p.meta.luogo) riga2.push(p.meta.luogo);
+  if (p.meta.data) riga2.push(formatData(p.meta.data));
+  if (riga2.length) { doc.text(riga2.join('  ·  '), ML + 10, ty + 4); ty += 10; }
+
+  if (p.meta.nome) {
+    doc.setFontSize(11); doc.setTextColor(120, 116, 106);
+    doc.text(p.meta.nome, ML + 10, ty + 4); ty += 8;
+  }
+
+  if (p.meta.note) {
+    doc.setFontSize(10); doc.setTextColor(90, 87, 80);
+    var noteLines = doc.splitTextToSize(p.meta.note, CW - 10);
+    noteLines.forEach(function(l) { doc.text(l, ML + 10, ty + 6); ty += 5.5; });
+  }
+
+  doc.setFontSize(10); doc.setTextColor(60, 57, 50);
+  doc.text(p.fotos.length + ' foto', ML + 10, PH - 20);
+
+  // ===== PAGINE FOTO =====
+  var cols, rows;
+  if (layout === 1) { cols = 1; rows = 1; }
+  else if (layout === 2) { cols = 1; rows = 2; }
+  else if (layout === 4) { cols = 2; rows = 2; }
+  else { cols = 2; rows = 3; }
+
+  var footerH = 16; // spazio per numero pagina
+  var headerH = 0;
+  var cellW = CW / cols;
+  var availH = PH - MT - MB - footerH;
+  var cellH = availH / rows;
+
+  var imgPad = 3;
+  var noteFontSize = 7.5;
+  var noteH = 5;
+  var imgAreaH = cellH - noteH - 2;
+
+  var totalPages = Math.ceil(p.fotos.length / (cols * rows));
+  var fi = 0;
+
+  for (var pg = 0; pg < totalPages; pg++) {
+    doc.addPage();
+
+    // Sfondo
+    doc.setFillColor(20, 20, 18);
+    doc.rect(0, 0, PW, PH, 'F');
+
+    // Numero pagina
+    doc.setFontSize(8); doc.setTextColor(80, 77, 70); doc.setFont('helvetica', 'normal');
+    var pageLabel = (p.meta.titolo || p.name);
+    if (pageLabel.length > 40) pageLabel = pageLabel.substring(0, 40) + '…';
+    doc.text(pageLabel, ML, PH - 6);
+    doc.text('Pag. ' + (pg + 1) + ' / ' + totalPages, PW - MR, PH - 6, { align: 'right' });
+
+    // Linea footer
+    doc.setDrawColor(40, 40, 36); doc.setLineWidth(0.3);
+    doc.line(ML, PH - MB + 2, PW - MR, PH - MB + 2);
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (fi >= p.fotos.length) break;
+        var foto = p.fotos[fi]; fi++;
+
+        var x = ML + c * cellW + imgPad;
+        var y = MT + r * cellH + imgPad;
+        var iw = cellW - imgPad * 2;
+        var ih = imgAreaH - imgPad * 2;
+
+        // Box immagine
+        doc.setFillColor(30, 30, 26);
+        doc.setDrawColor(45, 45, 40); doc.setLineWidth(0.2);
+        doc.rect(x, y, iw, ih, 'FD');
+
+        // Immagine
+        try {
+          var format = getImgFormat(foto.dataUrl);
+          doc.addImage(foto.dataUrl, format, x + 0.5, y + 0.5, iw - 1, ih - 1, undefined, 'MEDIUM');
+        } catch(e) { /* se fallisce salta */ }
+
+        // Didascalia: LETTERA + nota
+        var noteY = y + ih + 3.5;
+        var letPDF = indiceLettere(fi - 1);
+        // Lettera in evidenza (arancione, bold)
+        doc.setFontSize(8);
+        doc.setTextColor(232, 160, 32);
+        doc.setFont('helvetica', 'bold');
+        doc.text(letPDF, x + 2, noteY);
+        // Nota testuale accanto alla lettera
+        if (foto.note) {
+          doc.setFontSize(noteFontSize);
+          doc.setTextColor(160, 155, 140);
+          doc.setFont('helvetica', 'normal');
+          var letW = doc.getTextWidth(letPDF) + 2;
+          var nl = doc.splitTextToSize(foto.note, iw - 4 - letW);
+          doc.text(nl[0], x + 2 + letW, noteY);
+        }
+      }
+    }
+  }
+
+  // Salva
+  var filename = sanitize(p.meta.titolo || p.name) + '_' + (p.meta.data || today()) + '.pdf';
+  doc.save(filename);
+  showToast('PDF salvato: ' + filename, 'success', 3500);
+}
+
+// ===== UTILS =====
+
+function indiceLettere(i) {
+  var lettere = '';
+  i = i + 1; // 1-based
+  while (i > 0) {
+    i--;
+    lettere = String.fromCharCode(65 + (i % 26)) + lettere;
+    i = Math.floor(i / 26);
+  }
+  return lettere;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function sanitize(s) { return s.replace(/[^a-zA-Z0-9À-ÿ\s\-_]/g,'').replace(/\s+/g,'_').substring(0,50); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function formatData(d) {
+  if (!d) return '';
+  var parts = d.split('-');
+  if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+  return d;
+}
+function getImgFormat(dataUrl) {
+  if (dataUrl.indexOf('data:image/jpeg') === 0 || dataUrl.indexOf('data:image/jpg') === 0) return 'JPEG';
+  if (dataUrl.indexOf('data:image/png') === 0) return 'PNG';
+  if (dataUrl.indexOf('data:image/webp') === 0) return 'WEBP';
+  return 'JPEG';
+}
+
+// ===== SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/foto-pdf/sw.js')
+      .then(function() { console.log('SW registrato'); })
+      .catch(function(e) { console.log('SW errore', e); });
+  });
+}
+
+// ===== INIT =====
+load();
+if (projects.length) {
+  activeId = projects[0].id;
+  renderAll();
+} else {
+  renderProjects();
+}
+</script>
+</body>
+</html>
